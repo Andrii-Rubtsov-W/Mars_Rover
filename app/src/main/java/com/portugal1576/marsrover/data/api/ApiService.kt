@@ -1,13 +1,25 @@
 package com.portugal1576.marsrover.data.api
 
-import com.portugal1576.marsrover.data.model.PlayElement
-import retrofit2.Response
+import com.portugal1576.marsrover.data.model.ResultDto
+import com.portugal1576.marsrover.data.model.RickDto
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
-    @GET("")
-    suspend fun getWeather(
-        @Query("name") name: String
-    ): Response<PlayElement>
+
+    @GET("character")
+    suspend fun getCharacters(
+        @Query("page") page: Int,
+        @Query("name") name: String? = null,
+        @Query("status") status: String? = null,
+        @Query("species") species: String? = null,
+        @Query("type") type: String? = null,
+        @Query("gender") gender: String? = null
+    ): RickDto
+
+    @GET("character/{id}")
+    suspend fun getCharacterById(
+        @Path("id") id: Int
+    ): ResultDto
 }

@@ -11,10 +11,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.portugal1576.marsrover.data.model.PlayElement
+import com.portugal1576.marsrover.domain.model.Character
 import com.portugal1576.marsrover.presentation.screens.details_screen.DetailsScreenRoot
 import com.portugal1576.marsrover.presentation.screens.favorites_screen.FavoritesScreenRoot
-import com.portugal1576.marsrover.presentation.screens.list_screen.ListScreenRoot
+import com.portugal1576.marsrover.presentation.screens.start_screen.StartScreenRoot
 import kotlinx.serialization.json.Json
 import kotlin.reflect.typeOf
 
@@ -32,16 +32,16 @@ fun AppNavigation(
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = Screens.ListScreen
+        startDestination = Screens.StartScreen
     ) {
-        composable<Screens.ListScreen> {
-            ListScreenRoot(navController = navController)
+        composable<Screens.StartScreen> {
+            StartScreenRoot(navController = navController)
         }
 
         composable<Screens.Details>(
             typeMap = mapOf(
                 typeOf<Screens.Details>() to parcelableType<Screens.Details>(),
-                typeOf<PlayElement>() to parcelableType<PlayElement>()
+                typeOf<Character>() to parcelableType<Character>()
             )
         ) { backStackEntry ->
             val detail = backStackEntry.toRoute<Screens.Details>()

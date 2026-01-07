@@ -1,4 +1,4 @@
-package com.portugal1576.marsrover.presentation.screens.favorites_screen
+package com.portugal1576.marsrover.presentation.screens.start_screen
 
 import android.app.Activity
 import androidx.compose.foundation.background
@@ -35,40 +35,44 @@ import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun FavoritesScreenRoot(navController: NavController) {
+fun StartScreenRoot(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? Activity
-    FavoritesScreen(
+    StartScreen(
         navigate = { destinationScreen -> navController.navigate(destinationScreen) },
         finishActivity = { activity?.finish() }
     )
 }
 
 @Composable
-fun FavoritesScreen(
+fun StartScreen(
     navigate: (destinationScreen: Screens) -> Unit,
     finishActivity: () -> Unit
 ) {
-    val viewModel: FavoritesScreenViewModel = koinViewModel()
+    val viewModel: StartScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         delay(500)
-        viewModel.refreshPlayers()
+        viewModel.refreshCharacters()
     }
 
-    FavoritesScreenContent(
+    StartScreenContent(
         state = state,
         navigate = navigate,
-        finishActivity = finishActivity
+        finishActivity = finishActivity,
+        onLoadNextPage = { viewModel.loadNextPage() },
+        onToggleFavorite = { viewModel.toggleFavorite(it) }
     )
 }
 
 @Composable
-private fun FavoritesScreenContent(
-    state: FavoritesScreenState,
+private fun StartScreenContent(
+    state: StartScreenState,
     navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    finishActivity: () -> Unit,
+    onLoadNextPage: () -> Unit,
+    onToggleFavorite: (com.portugal1576.marsrover.domain.model.Character) -> Unit
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -76,13 +80,13 @@ private fun FavoritesScreenContent(
         Scaffold(
             bottomBar = {
                 BottomMenu(
-                    current = Screens.Favorites,
+                    current = Screens.StartScreen,
                     onNavigate = navigate
                 )
             }
         ) { innerPadding ->
             when (state) {
-                is FavoritesScreenState.Loading -> {
+                is StartScreenState.Loading -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -94,14 +98,14 @@ private fun FavoritesScreenContent(
                     }
                 }
 
-                is FavoritesScreenState.Loaded -> {
+                is StartScreenState.Loaded -> {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color(0xFF101010))
                             .padding(innerPadding)
                     ) {
-                        val count = state.character.size.coerceAtLeast(6)
+                        val count = state.items.size.coerceAtLeast(6)
                         items(count) { idx ->
                             Box(
                                 modifier = Modifier
@@ -111,7 +115,7 @@ private fun FavoritesScreenContent(
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = state.character.getOrNull(idx)?.name ?: "Item ${idx + 1}",
+                                    text = state.items.getOrNull(idx)?.name ?: "Item ${idx + 1}",
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
@@ -121,7 +125,7 @@ private fun FavoritesScreenContent(
                     }
                 }
 
-                is FavoritesScreenState.Error -> {
+                is StartScreenState.Error -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -140,13 +144,13 @@ private fun FavoritesScreenContent(
     Scaffold(
         bottomBar = {
             BottomMenu(
-                current = Screens.Favorites,
+                current = Screens.StartScreen,
                 onNavigate = navigate
             )
         }
     ) { innerPadding ->
         when (state) {
-            is FavoritesScreenState.Loading -> {
+            is StartScreenState.Loading -> {
                 Background(res = R.drawable.font_vert, alpha = 1f) {
                     Box(
                         modifier = Modifier
@@ -163,28 +167,49 @@ private fun FavoritesScreenContent(
                 }
             }
 
-            is FavoritesScreenState.Loaded -> {
+            is StartScreenState.Loaded -> {
                 Background(res = R.drawable.font_vert, alpha = 1f) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        items(state.character.size) { index ->
-                            val character = state.character[index]
+                        items(state.items.size) { index ->
+                            if (state.canLoadMore && index == state.items.lastIndex && !state.isLoadingMore) {
+                                LaunchedEffect(state.items.size) {
+                                    onLoadNextPage()
+                                }
+                            }
+
+                            val character = state.items[index]
                             ContainerItem(
                                 character = character,
                                 onDetailedDescriptionClick = {
                                     navigate(Screens.Details(character.id.toString()))
                                 },
-                                onFavoriteClick = {}
+                                onFavoriteClick = {
+                                    onToggleFavorite(character)
+                                }
                             )
+                        }
+
+                        if (state.isLoadingMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            is FavoritesScreenState.Error -> {
+            is StartScreenState.Error -> {
                 Background(res = R.drawable.font_vert, alpha = 1f) {
                     Box(
                         modifier = Modifier
@@ -200,38 +225,48 @@ private fun FavoritesScreenContent(
     }
 }
 
-@Preview(name = "FavoritesScreen - Loading", showBackground = true)
+@Preview(name = "StartScreen - Loading", showBackground = true)
 @Composable
-private fun FavoritesScreenPreview_Loading() {
+private fun StartScreenPreview_Loading() {
     MarsRoverTheme {
-        FavoritesScreenContent(
-            state = FavoritesScreenState.Loading,
+        StartScreenContent(
+            state = StartScreenState.Loading,
             navigate = {},
-            finishActivity = {}
+            finishActivity = {},
+            onLoadNextPage = {},
+            onToggleFavorite = {}
         )
     }
 }
 
-@Preview(name = "FavoritesScreen - Loaded", showBackground = true)
+@Preview(name = "StartScreen - Loaded", showBackground = true)
 @Composable
-private fun FavoritesScreenPreview_Loaded() {
+private fun StartScreenPreview_Loaded() {
     MarsRoverTheme {
-        FavoritesScreenContent(
-            state = FavoritesScreenState.Loaded(character = emptyList()),
+        StartScreenContent(
+            state = StartScreenState.Loaded(
+                items = emptyList(),
+                canLoadMore = true,
+                isLoadingMore = false
+            ),
             navigate = {},
-            finishActivity = {}
+            finishActivity = {},
+            onLoadNextPage = {},
+            onToggleFavorite = {}
         )
     }
 }
 
-@Preview(name = "FavoritesScreen - Error", showBackground = true)
+@Preview(name = "StartScreen - Error", showBackground = true)
 @Composable
-private fun FavoritesScreenPreview_Error() {
+private fun StartScreenPreview_Error() {
     MarsRoverTheme {
-        FavoritesScreenContent(
-            state = FavoritesScreenState.Error(message = "Something went wrong"),
+        StartScreenContent(
+            state = StartScreenState.Error(message = "Something went wrong"),
             navigate = {},
-            finishActivity = {}
+            finishActivity = {},
+            onLoadNextPage = {},
+            onToggleFavorite = {}
         )
     }
 }

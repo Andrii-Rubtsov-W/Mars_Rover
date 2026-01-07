@@ -1,29 +1,39 @@
 package com.portugal1576.marsrover.di
 
-import com.portugal1576.marsrover.data.model.PlayElement
+import androidx.room.Room
 import com.portugal1576.marsrover.data.api.ApiService
-import com.portugal1576.marsrover.data.api.MarsRoverRepository
 import com.portugal1576.marsrover.data.api.RetrofitInstance
+import com.portugal1576.marsrover.data.api.RickMortyRepositoryImpl
+import com.portugal1576.marsrover.data.local.FavoritesDatabase
+import com.portugal1576.marsrover.domain.model.FavoriteList
+import com.portugal1576.marsrover.domain.repository.CharacterRepository
+import com.portugal1576.marsrover.domain.usecase.GetCharacterByIdUseCase
+import com.portugal1576.marsrover.domain.usecase.GetCharactersUseCase
 import com.portugal1576.marsrover.presentation.screens.details_screen.DetailsScreenViewModel
 import com.portugal1576.marsrover.presentation.screens.favorites_screen.FavoritesScreenViewModel
-import com.portugal1576.marsrover.presentation.screens.list_screen.ListScreenViewModel
-import org.koin.core.module.dsl.singleOf
+import com.portugal1576.marsrover.presentation.screens.start_screen.StartScreenViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
-
     single<ApiService> { RetrofitInstance.api }
+    single<CharacterRepository> { RickMortyRepositoryImpl(get()) }
 
-    singleOf(::MarsRoverRepository)
-
-    viewModel { ListScreenViewModel() }
-
-    viewModel { FavoritesScreenViewModel() }
-
-    viewModel { (name: PlayElement) ->
-        DetailsScreenViewModel(
-            repository = get()
-        )
+    single {
+        Room.databaseBuilder(
+            androidContext(),
+            FavoritesDatabase::class.java,
+            "favorites.db"
+        ).build()
     }
+    single { get<FavoritesDatabase>().favoriteCharacterDao() }
+    single { FavoriteList(get()) }
+
+    factory { GetCharactersUseCase(get()) }
+    factory { GetCharacterByIdUseCase(get()) }
+
+    viewModel { StartScreenViewModel(get(), get()) }
+    viewModel { DetailsScreenViewModel(get(), get()) }
+    viewModel { FavoritesScreenViewModel(get()) }
 }
