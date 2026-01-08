@@ -34,18 +34,14 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun FavoritesScreenRoot(navController: NavController) {
-    val context = LocalContext.current
-    val activity = context as? Activity
     FavoritesScreen(
-        navigate = { destinationScreen -> navController.navigate(destinationScreen) },
-        finishActivity = { activity?.finish() }
+        navigate = { destinationScreen -> navController.navigate(destinationScreen) }
     )
 }
 
 @Composable
 fun FavoritesScreen(
-    navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    navigate: (destinationScreen: Screens) -> Unit
 ) {
     val viewModel: FavoritesScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -57,16 +53,14 @@ fun FavoritesScreen(
 
     FavoritesScreenContent(
         state = state,
-        navigate = navigate,
-        finishActivity = finishActivity
+        navigate = navigate
     )
 }
 
 @Composable
 private fun FavoritesScreenContent(
     state: FavoritesScreenState,
-    navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    navigate: (destinationScreen: Screens) -> Unit
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -191,8 +185,7 @@ private fun FavoritesPreview() {
     MarsRoverTheme {
         FavoritesScreenContent(
             state = FavoritesScreenState.Error("Favorite list is empty"),
-            navigate = {},
-            finishActivity = {}
+            navigate = {}
         )
     }
 }
