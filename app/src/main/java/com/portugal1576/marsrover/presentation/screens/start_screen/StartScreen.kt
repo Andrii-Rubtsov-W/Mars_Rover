@@ -1,6 +1,5 @@
 package com.portugal1576.marsrover.presentation.screens.start_screen
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,18 +34,14 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StartScreenRoot(navController: NavController) {
-    val context = LocalContext.current
-    val activity = context as? Activity
     StartScreen(
-        navigate = { destinationScreen -> navController.navigate(destinationScreen) },
-        finishActivity = { activity?.finish() }
+        navigate = { destinationScreen -> navController.navigate(destinationScreen) }
     )
 }
 
 @Composable
 fun StartScreen(
-    navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    navigate: (destinationScreen: Screens) -> Unit
 ) {
     val viewModel: StartScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -60,7 +54,6 @@ fun StartScreen(
     StartScreenContent(
         state = state,
         navigate = navigate,
-        finishActivity = finishActivity,
         onLoadNextPage = { viewModel.loadNextPage() },
         onToggleFavorite = { viewModel.toggleFavorite(it) }
     )
@@ -70,7 +63,6 @@ fun StartScreen(
 private fun StartScreenContent(
     state: StartScreenState,
     navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit,
     onLoadNextPage: () -> Unit,
     onToggleFavorite: (com.portugal1576.marsrover.domain.model.Character) -> Unit
 ) {
@@ -185,7 +177,7 @@ private fun StartScreenContent(
                             ContainerItem(
                                 character = character,
                                 onDetailedDescriptionClick = {
-                                    navigate(Screens.Details(character.id.toString()))
+                                    navigate(Screens.Details(character.id))
                                 },
                                 onFavoriteClick = {
                                     onToggleFavorite(character)
@@ -232,7 +224,6 @@ private fun StartScreenPreview_Loading() {
         StartScreenContent(
             state = StartScreenState.Loading,
             navigate = {},
-            finishActivity = {},
             onLoadNextPage = {},
             onToggleFavorite = {}
         )
@@ -250,7 +241,6 @@ private fun StartScreenPreview_Loaded() {
                 isLoadingMore = false
             ),
             navigate = {},
-            finishActivity = {},
             onLoadNextPage = {},
             onToggleFavorite = {}
         )
@@ -264,7 +254,6 @@ private fun StartScreenPreview_Error() {
         StartScreenContent(
             state = StartScreenState.Error(message = "Something went wrong"),
             navigate = {},
-            finishActivity = {},
             onLoadNextPage = {},
             onToggleFavorite = {}
         )

@@ -1,6 +1,5 @@
 package com.portugal1576.marsrover.presentation.screens.favorites_screen
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,18 +34,14 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun FavoritesScreenRoot(navController: NavController) {
-    val context = LocalContext.current
-    val activity = context as? Activity
     FavoritesScreen(
-        navigate = { destinationScreen -> navController.navigate(destinationScreen) },
-        finishActivity = { activity?.finish() }
+        navigate = { destinationScreen -> navController.navigate(destinationScreen) }
     )
 }
 
 @Composable
 fun FavoritesScreen(
-    navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    navigate: (destinationScreen: Screens) -> Unit
 ) {
     val viewModel: FavoritesScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -59,16 +53,14 @@ fun FavoritesScreen(
 
     FavoritesScreenContent(
         state = state,
-        navigate = navigate,
-        finishActivity = finishActivity
+        navigate = navigate
     )
 }
 
 @Composable
 private fun FavoritesScreenContent(
     state: FavoritesScreenState,
-    navigate: (destinationScreen: Screens) -> Unit,
-    finishActivity: () -> Unit
+    navigate: (destinationScreen: Screens) -> Unit
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -111,7 +103,8 @@ private fun FavoritesScreenContent(
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = state.character.getOrNull(idx)?.name ?: "Item ${idx + 1}",
+                                    text = state.character.getOrNull(idx)?.name
+                                        ?: "Item ${idx + 1}",
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
@@ -175,7 +168,7 @@ private fun FavoritesScreenContent(
                             ContainerItem(
                                 character = character,
                                 onDetailedDescriptionClick = {
-                                    navigate(Screens.Details(character.id.toString()))
+                                    navigate(Screens.Details(character.id))
                                 },
                                 onFavoriteClick = {}
                             )
@@ -206,8 +199,7 @@ private fun FavoritesScreenPreview_Loading() {
     MarsRoverTheme {
         FavoritesScreenContent(
             state = FavoritesScreenState.Loading,
-            navigate = {},
-            finishActivity = {}
+            navigate = {}
         )
     }
 }
@@ -218,8 +210,7 @@ private fun FavoritesScreenPreview_Loaded() {
     MarsRoverTheme {
         FavoritesScreenContent(
             state = FavoritesScreenState.Loaded(character = emptyList()),
-            navigate = {},
-            finishActivity = {}
+            navigate = {}
         )
     }
 }
@@ -230,8 +221,7 @@ private fun FavoritesScreenPreview_Error() {
     MarsRoverTheme {
         FavoritesScreenContent(
             state = FavoritesScreenState.Error(message = "Something went wrong"),
-            navigate = {},
-            finishActivity = {}
+            navigate = {}
         )
     }
 }

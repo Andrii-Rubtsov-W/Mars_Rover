@@ -11,7 +11,7 @@ sealed class Screens {
 
     @Parcelize
     @Serializable
-    data class Details(val name: String) : Screens(), Parcelable
+    data class Details(val id: Int) : Screens(), Parcelable
 
     @Parcelize
     @Serializable

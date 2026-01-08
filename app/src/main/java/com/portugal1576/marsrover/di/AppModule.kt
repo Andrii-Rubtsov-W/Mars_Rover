@@ -34,6 +34,6 @@ val appModule = module {
     factory { GetCharacterByIdUseCase(get()) }
 
     viewModel { StartScreenViewModel(get(), get()) }
-    viewModel { DetailsScreenViewModel(get(), get()) }
+    viewModel { DetailsScreenViewModel(get(), get(), get()) }
     viewModel { FavoritesScreenViewModel(get()) }
 }
