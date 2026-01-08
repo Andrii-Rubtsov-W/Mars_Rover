@@ -1,6 +1,7 @@
 package com.portugal1576.marsrover.domain.repository
 
 import com.portugal1576.marsrover.domain.model.Character
+import com.portugal1576.marsrover.domain.model.Episode
 import com.portugal1576.marsrover.domain.model.Page
 
 interface CharacterRepository {
@@ -14,4 +15,5 @@ interface CharacterRepository {
     ): Page<Character>
 
     suspend fun getCharacterById(id: Int): Character
+    suspend fun getEpisodeById(id: Int): Episode
 }

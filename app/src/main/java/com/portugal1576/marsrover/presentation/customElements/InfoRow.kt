@@ -27,7 +27,7 @@ fun InfoRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp),
+            .padding(top = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

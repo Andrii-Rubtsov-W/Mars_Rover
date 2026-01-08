@@ -1,5 +1,6 @@
 package com.portugal1576.marsrover.data.api
 
+import com.portugal1576.marsrover.data.model.EpisodeDto
 import com.portugal1576.marsrover.data.model.ResultDto
 import com.portugal1576.marsrover.data.model.RickDto
 import retrofit2.http.GET
@@ -22,4 +23,9 @@ interface ApiService {
     suspend fun getCharacterById(
         @Path("id") id: Int
     ): ResultDto
+
+    @GET("episode/{id}")
+    suspend fun getEpisodeById(
+        @Path("id") id: Int
+    ): EpisodeDto
 }

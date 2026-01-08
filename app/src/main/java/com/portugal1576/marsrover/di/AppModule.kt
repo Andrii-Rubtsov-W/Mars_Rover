@@ -9,6 +9,7 @@ import com.portugal1576.marsrover.domain.model.FavoriteList
 import com.portugal1576.marsrover.domain.repository.CharacterRepository
 import com.portugal1576.marsrover.domain.usecase.GetCharacterByIdUseCase
 import com.portugal1576.marsrover.domain.usecase.GetCharactersUseCase
+import com.portugal1576.marsrover.domain.usecase.GetEpisodeByIdUseCase
 import com.portugal1576.marsrover.presentation.screens.details_screen.DetailsScreenViewModel
 import com.portugal1576.marsrover.presentation.screens.favorites_screen.FavoritesScreenViewModel
 import com.portugal1576.marsrover.presentation.screens.start_screen.StartScreenViewModel
@@ -29,11 +30,20 @@ val appModule = module {
     }
     single { get<FavoritesDatabase>().favoriteCharacterDao() }
     single { FavoriteList(get()) }
+    viewModel { FavoritesScreenViewModel(get()) }
 
     factory { GetCharactersUseCase(get()) }
     factory { GetCharacterByIdUseCase(get()) }
 
     viewModel { StartScreenViewModel(get(), get()) }
-    viewModel { DetailsScreenViewModel(get(), get(), get()) }
-    viewModel { FavoritesScreenViewModel(get()) }
+
+    factory { GetEpisodeByIdUseCase(get()) }
+    viewModel {
+        DetailsScreenViewModel(
+            savedStateHandle = get(),
+            getCharacterById = get(),
+            getEpisodeById = get(),
+            favoriteList = get()
+        )
+    }
 }

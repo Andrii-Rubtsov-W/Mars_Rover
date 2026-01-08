@@ -2,6 +2,7 @@ package com.portugal1576.marsrover.data.api
 
 import com.portugal1576.marsrover.data.mapper.toDomain
 import com.portugal1576.marsrover.domain.model.Character
+import com.portugal1576.marsrover.domain.model.Episode
 import com.portugal1576.marsrover.domain.model.Page
 import com.portugal1576.marsrover.domain.repository.CharacterRepository
 
@@ -36,5 +37,9 @@ class RickMortyRepositoryImpl(
 
     override suspend fun getCharacterById(id: Int): Character {
         return apiService.getCharacterById(id).toDomain()
+    }
+
+    override suspend fun getEpisodeById(id: Int): Episode {
+        return apiService.getEpisodeById(id).toDomain()
     }
 }
