@@ -1,6 +1,5 @@
 package com.portugal1576.marsrover.presentation.screens.favorites_screen
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -95,7 +93,11 @@ private fun FavoritesScreenContent(
                     ) {
                         items(state.character.size) { idx ->
                             val ch = state.character[idx]
-                            Text(text = ch.name, color = Color.White, modifier = Modifier.padding(12.dp))
+                            Text(
+                                text = ch.name,
+                                color = Color.White,
+                                modifier = Modifier.padding(12.dp)
+                            )
                         }
                     }
                 }
@@ -154,7 +156,12 @@ private fun FavoritesScreenContent(
                             ContainerItem(
                                 character = character,
                                 onDetailedDescriptionClick = {
-                                    navigate(Screens.Details(id = character.id, from = DetailsFrom.FAVORITES))
+                                    navigate(
+                                        Screens.Details(
+                                            id = character.id,
+                                            from = DetailsFrom.FAVORITES
+                                        )
+                                    )
                                 },
                                 onFavoriteClick = {}
                             )
