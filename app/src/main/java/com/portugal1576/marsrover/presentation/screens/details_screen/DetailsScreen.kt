@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,15 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -104,17 +102,19 @@ fun DetailsScreen(
         return
     }
 
-    Background(res = R.drawable.font_vert, alpha = 1f) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
-        ) {
-            DetailsScreenContent(
-                state = state,
-                onRemoveConfirmed = onRemoveConfirmed,
-                onAddFavorite = onAddFavorite
-            )
+    Scaffold { innerPadding ->
+        Background(res = R.drawable.font_vert, alpha = 1f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                DetailsScreenContent(
+                    state = state,
+                    onRemoveConfirmed = onRemoveConfirmed,
+                    onAddFavorite = onAddFavorite
+                )
+            }
         }
     }
 }
@@ -260,9 +260,9 @@ private fun DetailsScreenContent(
 
                     Text(
                         text = "Episodes",
-                        fontSize = 16.sp,
+                        fontSize = 24.sp,
                         fontFamily = FontFamily(Font(R.font.robo_medium_font, FontWeight.Normal)),
-                        color = Color.White,
+                        color = PortugalRedWine,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -303,11 +303,11 @@ private fun DetailsScreenContent(
                                             url.substringAfterLast("/", missingDelimiterValue = url)
                                         Text(
                                             text = "Episode $ep",
-                                            fontSize = 14.sp,
+                                            fontSize = 20.sp,
                                             color = Color.White,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(vertical = 2.dp)
+                                                .padding(vertical = 8.dp)
                                         )
                                     }
                                 }
