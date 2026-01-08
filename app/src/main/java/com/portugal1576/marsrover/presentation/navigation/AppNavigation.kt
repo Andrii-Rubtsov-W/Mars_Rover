@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.portugal1576.marsrover.presentation.screens.details_screen.DetailsScreenRoot
 import com.portugal1576.marsrover.presentation.screens.favorites_screen.FavoritesScreenRoot
 import com.portugal1576.marsrover.presentation.screens.start_screen.StartScreenRoot
@@ -30,8 +31,12 @@ fun AppNavigation(
             StartScreenRoot(navController = navController)
         }
 
-        composable<Screens.Details> {
-            DetailsScreenRoot()
+        composable<Screens.Details> { backStackEntry ->
+            val detail = backStackEntry.toRoute<Screens.Details>()
+            DetailsScreenRoot(
+                navController = navController,
+                from = detail.from
+            )
         }
 
         composable<Screens.Favorites> {

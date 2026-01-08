@@ -7,6 +7,7 @@ import com.portugal1576.marsrover.domain.model.FavoriteList
 import com.portugal1576.marsrover.domain.usecase.GetCharactersUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class StartScreenViewModel(
@@ -15,12 +16,13 @@ class StartScreenViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<StartScreenState>(StartScreenState.Loading)
-    val state: StateFlow<StartScreenState> = _state
+    val state: StateFlow<StartScreenState> = _state.asStateFlow()
 
     private var currentPage = 1
     private var canLoadMore = true
     private var isLoadingMore = false
     private var favoriteIds: Set<Int> = emptySet()
+    private var initialized = false
 
     init {
         viewModelScope.launch {
@@ -36,13 +38,27 @@ class StartScreenViewModel(
         }
     }
 
-    fun refreshCharacters() {
+    fun loadInitialIfNeeded() {
+        if (initialized) return
+        initialized = true
+
+        val showLoading = _state.value !is StartScreenState.Loaded
+        refreshCharacters(showLoading = showLoading)
+    }
+
+    fun refreshCharacters(showLoading: Boolean = true) {
         currentPage = 1
         canLoadMore = true
         isLoadingMore = false
 
         viewModelScope.launch {
-            _state.value = StartScreenState.Loading
+            val prev = _state.value
+            if (showLoading) {
+                _state.value = StartScreenState.Loading
+            } else if (prev is StartScreenState.Loaded) {
+                _state.value = prev.copy(isLoadingMore = false)
+            }
+
             runCatching { getCharacters(page = currentPage) }
                 .onSuccess { page ->
                     canLoadMore = page.nextPage != null
@@ -53,7 +69,10 @@ class StartScreenViewModel(
                     )
                 }
                 .onFailure {
-                    _state.value = StartScreenState.Error("Load error")
+                    val cur = _state.value
+                    if (cur !is StartScreenState.Loaded) {
+                        _state.value = StartScreenState.Error("Load error")
+                    }
                 }
         }
     }
@@ -73,6 +92,7 @@ class StartScreenViewModel(
                     currentPage += 1
                     canLoadMore = page.nextPage != null
                     isLoadingMore = false
+
                     _state.value = cur.copy(
                         items = (cur.items + page.items).map { it.copy(isFavorite = favoriteIds.contains(it.id)) },
                         canLoadMore = canLoadMore,

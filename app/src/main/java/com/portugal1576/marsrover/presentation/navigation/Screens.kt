@@ -1,19 +1,21 @@
 package com.portugal1576.marsrover.presentation.navigation
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
+@Serializable
+enum class DetailsFrom {
+    START,
+    FAVORITES
+}
+
+@Serializable
 sealed class Screens {
-    @Parcelize
     @Serializable
-    data object StartScreen : Screens(), Parcelable
+    data object StartScreen : Screens()
 
-    @Parcelize
     @Serializable
-    data class Details(val id: Int) : Screens(), Parcelable
+    data class Details(val id: Int, val from: DetailsFrom) : Screens()
 
-    @Parcelize
     @Serializable
-    data object Favorites : Screens(), Parcelable
+    data object Favorites : Screens()
 }

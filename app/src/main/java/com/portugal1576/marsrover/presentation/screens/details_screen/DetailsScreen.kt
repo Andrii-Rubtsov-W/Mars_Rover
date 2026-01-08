@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,32 +47,49 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.portugal1576.marsrover.R
 import com.portugal1576.marsrover.domain.model.Character
 import com.portugal1576.marsrover.presentation.customElements.Background
 import com.portugal1576.marsrover.presentation.customElements.InfoRow
 import com.portugal1576.marsrover.presentation.customElements.RemoveFavoriteDialog
+import com.portugal1576.marsrover.presentation.navigation.DetailsFrom
+import com.portugal1576.marsrover.presentation.navigation.Screens
 import com.portugal1576.marsrover.ui.theme.MarsRoverTheme
 import com.portugal1576.marsrover.ui.theme.PortugalGreenFlag
 import com.portugal1576.marsrover.ui.theme.PortugalRedWine
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun DetailsScreenRoot() {
+fun DetailsScreenRoot(
+    navController: NavHostController,
+    from: DetailsFrom
+) {
     val viewModel: DetailsScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
 
     DetailsScreen(
         state = state,
-        onFavoriteClick = { viewModel.toggleFavorite() }
+        from = from,
+        onRemoveConfirmed = {
+            viewModel.toggleFavorite()
+            val popped = navController.popBackStack()
+            if (!popped) {
+                navController.navigate(if (from == DetailsFrom.FAVORITES) Screens.Favorites else Screens.StartScreen)
+            }
+        },
+        onAddFavorite = { viewModel.toggleFavorite() }
     )
 }
 
 @Composable
 fun DetailsScreen(
     state: DetailsScreenState,
-    onFavoriteClick: () -> Unit
+    from: DetailsFrom,
+    onRemoveConfirmed: () -> Unit,
+    onAddFavorite: () -> Unit
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -78,7 +97,8 @@ fun DetailsScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             DetailsScreenContent(
                 state = state,
-                onFavoriteClick = onFavoriteClick
+                onRemoveConfirmed = onRemoveConfirmed,
+                onAddFavorite = onAddFavorite
             )
         }
         return
@@ -92,7 +112,8 @@ fun DetailsScreen(
         ) {
             DetailsScreenContent(
                 state = state,
-                onFavoriteClick = onFavoriteClick
+                onRemoveConfirmed = onRemoveConfirmed,
+                onAddFavorite = onAddFavorite
             )
         }
     }
@@ -101,7 +122,8 @@ fun DetailsScreen(
 @Composable
 private fun DetailsScreenContent(
     state: DetailsScreenState,
-    onFavoriteClick: () -> Unit
+    onRemoveConfirmed: () -> Unit,
+    onAddFavorite: () -> Unit
 ) {
     var showRemoveDialog by remember { mutableStateOf(false) }
 
@@ -144,7 +166,7 @@ private fun DetailsScreenContent(
                     textFont = statusFont,
                     onConfirm = {
                         showRemoveDialog = false
-                        onFavoriteClick()
+                        onRemoveConfirmed()
                     },
                     onDismiss = { showRemoveDialog = false }
                 )
@@ -221,7 +243,8 @@ private fun DetailsScreenContent(
                             modifier = Modifier
                                 .padding(start = 8.dp)
                                 .clickable {
-                                    if (character.isFavorite) showRemoveDialog = true else onFavoriteClick()
+                                    if (character.isFavorite) showRemoveDialog =
+                                        true else onAddFavorite()
                                 }
                         )
                     }
@@ -255,10 +278,10 @@ private fun DetailsScreenContent(
                     } else {
                         val episodesBoxScroll = rememberScrollState()
                         val maxVisible = 5
-                        val itemHeight = 26.dp
-                        val containerHeight = (itemHeight * minOf(character.episodeUrls.size, maxVisible))
-                            .coerceAtLeast(78.dp)
-
+                        val itemHeight = 48.dp
+                        val containerHeight =
+                            (itemHeight * minOf(character.episodeUrls.size, maxVisible))
+                                .coerceAtLeast(78.dp)
                         Card(
                             border = BorderStroke(2.dp, PortugalRedWine),
                             colors = CardDefaults.cardColors(containerColor = PortugalGreenFlag),
@@ -268,25 +291,65 @@ private fun DetailsScreenContent(
                                 .height(containerHeight)
                                 .padding(top = 6.dp, bottom = 10.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(episodesBoxScroll)
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                            ) {
-                                character.episodeUrls.forEach { url ->
-                                    val ep = url.substringAfterLast("/", missingDelimiterValue = url)
-                                    Text(
-                                        text = "Episode $ep",
-                                        fontSize = 14.sp,
-                                        color = Color.White,
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(episodesBoxScroll)
+                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                ) {
+                                    character.episodeUrls.forEach { url ->
+                                        val ep =
+                                            url.substringAfterLast("/", missingDelimiterValue = url)
+                                        Text(
+                                            text = "Episode $ep",
+                                            fontSize = 14.sp,
+                                            color = Color.White,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                val canScroll = episodesBoxScroll.maxValue > 0
+                                if (canScroll) {
+                                    val progress =
+                                        (episodesBoxScroll.value.toFloat() / episodesBoxScroll.maxValue.toFloat())
+                                            .coerceIn(0f, 1f)
+
+                                    Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 2.dp)
+                                            .align(Alignment.CenterEnd)
+                                            .padding(end = 6.dp, top = 10.dp, bottom = 10.dp)
+                                            .fillMaxHeight()
+                                            .width(3.dp)
+                                            .background(
+                                                Color.White.copy(alpha = 0.25f),
+                                                RoundedCornerShape(99.dp)
+                                            )
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(end = 6.dp, top = 10.dp)
+                                            .offset(
+                                                y = (progress * (containerHeight - 20.dp)).coerceAtLeast(
+                                                    0.dp
+                                                )
+                                            )
+                                            .width(3.dp)
+                                            .height(20.dp)
+                                            .background(
+                                                Color.White.copy(alpha = 0.8f),
+                                                RoundedCornerShape(99.dp)
+                                            )
                                     )
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -300,7 +363,8 @@ private fun DetailsScreenPreviewLoading() {
     MarsRoverTheme {
         DetailsScreenContent(
             state = DetailsScreenState.Loading,
-            onFavoriteClick = {}
+            onRemoveConfirmed = {},
+            onAddFavorite = {}
         )
     }
 }
@@ -332,7 +396,8 @@ private fun DetailsScreenPreviewLoaded() {
                     isFavorite = true
                 )
             ),
-            onFavoriteClick = {}
+            onRemoveConfirmed = {},
+            onAddFavorite = {}
         )
     }
 }
@@ -343,7 +408,8 @@ private fun DetailsScreenPreviewError() {
     MarsRoverTheme {
         DetailsScreenContent(
             state = DetailsScreenState.Error("Load error"),
-            onFavoriteClick = {}
+            onRemoveConfirmed = {},
+            onAddFavorite = {}
         )
     }
 }

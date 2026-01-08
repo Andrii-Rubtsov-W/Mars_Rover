@@ -2,13 +2,10 @@ package com.portugal1576.marsrover.presentation.screens.start_screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -26,12 +23,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.portugal1576.marsrover.R
 import com.portugal1576.marsrover.presentation.customElements.Background
 import com.portugal1576.marsrover.presentation.customElements.ContainerItem
 import com.portugal1576.marsrover.presentation.customElements.bottomMenu.BottomMenu
+import com.portugal1576.marsrover.presentation.navigation.DetailsFrom
 import com.portugal1576.marsrover.presentation.navigation.Screens
 import com.portugal1576.marsrover.ui.theme.MarsRoverTheme
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -48,9 +46,8 @@ fun StartScreen(
     val viewModel: StartScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(Unit) {
-        delay(500)
-        viewModel.refreshCharacters()
+    LaunchedEffect(viewModel) {
+        viewModel.loadInitialIfNeeded()
     }
 
     StartScreenContent(
@@ -135,24 +132,21 @@ private fun StartScreenContent(
         return
     }
 
-    Background(alpha = 1f) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0),
-            bottomBar = {
-                BottomMenu(
-                    current = Screens.StartScreen,
-                    onNavigate = navigate
-                )
-            }
-        ) { innerPadding ->
+    Scaffold(
+        bottomBar = {
+            BottomMenu(
+                current = Screens.StartScreen,
+                onNavigate = navigate
+            )
+        }
+    ) { innerPadding ->
+        Background(res = R.drawable.font_vert, alpha = 1f) {
             when (state) {
                 is StartScreenState.Loading -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
-                            .windowInsetsPadding(WindowInsets.statusBars),
+                            .padding(innerPadding),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(
@@ -168,7 +162,6 @@ private fun StartScreenContent(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-                            .windowInsetsPadding(WindowInsets.statusBars)
                     ) {
                         items(state.items.size) { index ->
                             if (state.canLoadMore && index == state.items.lastIndex && !state.isLoadingMore) {
@@ -178,7 +171,9 @@ private fun StartScreenContent(
                             val character = state.items[index]
                             ContainerItem(
                                 character = character,
-                                onDetailedDescriptionClick = { navigate(Screens.Details(character.id)) },
+                                onDetailedDescriptionClick = {
+                                    navigate(Screens.Details(id = character.id, from = DetailsFrom.START))
+                                },
                                 onFavoriteClick = { onToggleFavorite(character) }
                             )
                         }
@@ -202,8 +197,7 @@ private fun StartScreenContent(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
-                            .windowInsetsPadding(WindowInsets.statusBars),
+                            .padding(innerPadding),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = state.message, color = Color.Red)
@@ -220,6 +214,36 @@ private fun StartScreenPreview_Loading() {
     MarsRoverTheme {
         StartScreenContent(
             state = StartScreenState.Loading,
+            navigate = {},
+            onLoadNextPage = {},
+            onToggleFavorite = {}
+        )
+    }
+}
+
+@Preview(name = "StartScreen - Loaded", showBackground = true)
+@Composable
+private fun StartScreenPreview_Loaded() {
+    MarsRoverTheme {
+        StartScreenContent(
+            state = StartScreenState.Loaded(
+                items = emptyList(),
+                canLoadMore = true,
+                isLoadingMore = false
+            ),
+            navigate = {},
+            onLoadNextPage = {},
+            onToggleFavorite = {}
+        )
+    }
+}
+
+@Preview(name = "StartScreen - Error", showBackground = true)
+@Composable
+private fun StartScreenPreview_Error() {
+    MarsRoverTheme {
+        StartScreenContent(
+            state = StartScreenState.Error(message = "Something went wrong"),
             navigate = {},
             onLoadNextPage = {},
             onToggleFavorite = {}
