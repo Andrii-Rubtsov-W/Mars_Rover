@@ -170,7 +170,8 @@ private fun FavoritesScreenContent(
                                 onDetailedDescriptionClick = {
                                     navigate(Screens.Details(character.id))
                                 },
-                                onFavoriteClick = {}
+                                onFavoriteClick = {},
+                                showFavoriteIcon = false
                             )
                         }
                     }

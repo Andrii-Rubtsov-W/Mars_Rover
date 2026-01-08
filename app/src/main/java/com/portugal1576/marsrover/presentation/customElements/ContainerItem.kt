@@ -3,14 +3,12 @@ package com.portugal1576.marsrover.presentation.customElements
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,7 +38,8 @@ import com.portugal1576.marsrover.ui.theme.PortugalRedWine
 fun ContainerItem(
     character: Character,
     onDetailedDescriptionClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    showFavoriteIcon: Boolean = true
 ) {
     val font = FontFamily(Font(R.font.inter_regular, FontWeight.Normal))
 
@@ -51,39 +50,34 @@ fun ContainerItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp, horizontal = 12.dp)
+            .clickable { onDetailedDescriptionClick() }
     ) {
         Row(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
+                .padding(start = 8.dp, end = 16.dp, bottom = 8.dp, top = 8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (character.image.isNotBlank()) {
+            Card(
+                border = BorderStroke(width = 2.dp, PortugalRedWine),
+                colors = CardDefaults.cardColors(containerColor = PortugalGreenFlag),
+                shape = RoundedCornerShape(size = 12.dp),
+                modifier = Modifier.size(110.dp)
+            ) {
                 AsyncImage(
                     model = character.image,
                     contentDescription = null,
                     modifier = Modifier
-                        .weight(1f)
-                        .heightIn(max = 180.dp)
-                        .clickable { onDetailedDescriptionClick() }
-                        .padding(end = 8.dp),
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
                     contentScale = ContentScale.Crop
-                )
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.google),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(max = 180.dp)
-                        .clickable { onDetailedDescriptionClick() }
-                        .padding(end = 8.dp),
-                    contentScale = ContentScale.Fit
                 )
             }
 
             Column(
                 modifier = Modifier
-                    .weight(if (character.image.isNotBlank()) 2f else 3f)
+                    .padding(start = 6.dp)
+                    .weight(1f)
                     .fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -96,28 +90,11 @@ fun ContainerItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .clickable { onDetailedDescriptionClick() }
+                    modifier = Modifier.padding(top = 8.dp)
                 )
 
                 Text(
                     text = character.status.ifBlank { "Unknown status" },
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    fontFamily = FontFamily(Font(R.font.serif_bold_italic, FontWeight.Normal)),
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-                        .clickable { onDetailedDescriptionClick() }
-                )
-
-                Text(
-                    text = "(View details...)",
                     fontSize = 14.sp,
                     color = Color.White,
                     fontFamily = FontFamily(Font(R.font.robo_thin_font, FontWeight.Normal)),
@@ -126,25 +103,16 @@ fun ContainerItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 8.dp, end = 8.dp)
-                        .clickable { onDetailedDescriptionClick() }
                 )
+            }
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_favorite),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(if (character.isFavorite) Color.Red else Color.White),
-                        modifier = Modifier.clickable { onFavoriteClick() }
-                    )
-                }
+            if (showFavoriteIcon) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_favorite),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(if (character.isFavorite) Color.Red else Color.White),
+                    modifier = Modifier.clickable { onFavoriteClick() }
+                )
             }
         }
     }
@@ -157,7 +125,7 @@ private fun ContainerItemPreview() {
         character = Character(
             id = 1,
             name = "Rick Sanchez",
-            image = "",
+            image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
             status = "Alive",
             species = "Human",
             gender = "Male",
@@ -167,6 +135,7 @@ private fun ContainerItemPreview() {
             isFavorite = false
         ),
         onDetailedDescriptionClick = {},
-        onFavoriteClick = {}
+        onFavoriteClick = {},
+        showFavoriteIcon = true
     )
 }
