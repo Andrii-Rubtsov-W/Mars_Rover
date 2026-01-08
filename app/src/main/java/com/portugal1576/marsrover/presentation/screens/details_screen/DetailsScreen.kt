@@ -27,6 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +50,7 @@ import com.portugal1576.marsrover.R
 import com.portugal1576.marsrover.domain.model.Character
 import com.portugal1576.marsrover.presentation.customElements.Background
 import com.portugal1576.marsrover.presentation.customElements.InfoRow
+import com.portugal1576.marsrover.presentation.customElements.RemoveFavoriteDialog
 import com.portugal1576.marsrover.ui.theme.MarsRoverTheme
 import com.portugal1576.marsrover.ui.theme.PortugalGreenFlag
 import com.portugal1576.marsrover.ui.theme.PortugalRedWine
@@ -99,6 +103,8 @@ private fun DetailsScreenContent(
     state: DetailsScreenState,
     onFavoriteClick: () -> Unit
 ) {
+    var showRemoveDialog by remember { mutableStateOf(false) }
+
     when (state) {
         is DetailsScreenState.Loading -> {
             Box(
@@ -131,6 +137,19 @@ private fun DetailsScreenContent(
             val nameFont = FontFamily(Font(R.font.inter_regular, FontWeight.Normal))
             val statusFont = FontFamily(Font(R.font.robo_thin_font, FontWeight.Normal))
 
+            if (showRemoveDialog) {
+                RemoveFavoriteDialog(
+                    name = character.name,
+                    titleFont = nameFont,
+                    textFont = statusFont,
+                    onConfirm = {
+                        showRemoveDialog = false
+                        onFavoriteClick()
+                    },
+                    onDismiss = { showRemoveDialog = false }
+                )
+            }
+
             Card(
                 border = BorderStroke(2.dp, PortugalRedWine),
                 colors = CardDefaults.cardColors(containerColor = PortugalGreenFlag),
@@ -146,8 +165,7 @@ private fun DetailsScreenContent(
                         .padding(16.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Card(
@@ -202,7 +220,9 @@ private fun DetailsScreenContent(
                             colorFilter = ColorFilter.tint(if (character.isFavorite) Color.Red else Color.White),
                             modifier = Modifier
                                 .padding(start = 8.dp)
-                                .clickable { onFavoriteClick() }
+                                .clickable {
+                                    if (character.isFavorite) showRemoveDialog = true else onFavoriteClick()
+                                }
                         )
                     }
 
