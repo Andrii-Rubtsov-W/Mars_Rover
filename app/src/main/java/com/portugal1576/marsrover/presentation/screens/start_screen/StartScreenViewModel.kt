@@ -8,6 +8,9 @@ import com.portugal1576.marsrover.domain.usecase.GetCharactersUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class StartScreenViewModel(
@@ -18,11 +21,13 @@ class StartScreenViewModel(
     private val _state = MutableStateFlow<StartScreenState>(StartScreenState.Loading)
     val state: StateFlow<StartScreenState> = _state.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
     private var currentPage = 1
-    private var canLoadMore = true
-    private var isLoadingMore = false
     private var favoriteIds: Set<Int> = emptySet()
-    private var initialized = false
+    private var hasLoadedOnce = false
+    private var isLoadingMore = false
 
     init {
         viewModelScope.launch {
@@ -36,32 +41,37 @@ class StartScreenViewModel(
                 }
             }
         }
+
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(350)
+                .distinctUntilChanged()
+                .collectLatest {
+                    if (hasLoadedOnce) refreshCharacters()
+                }
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun loadInitialIfNeeded() {
-        if (initialized) return
-        initialized = true
-
-        val showLoading = _state.value !is StartScreenState.Loaded
-        refreshCharacters(showLoading = showLoading)
+        if (hasLoadedOnce) return
+        hasLoadedOnce = true
+        refreshCharacters()
     }
 
-    fun refreshCharacters(showLoading: Boolean = true) {
+    fun refreshCharacters() {
+        val name = _searchQuery.value.trim().ifBlank { null }
         currentPage = 1
-        canLoadMore = true
         isLoadingMore = false
 
         viewModelScope.launch {
-            val prev = _state.value
-            if (showLoading) {
-                _state.value = StartScreenState.Loading
-            } else if (prev is StartScreenState.Loaded) {
-                _state.value = prev.copy(isLoadingMore = false)
-            }
-
-            runCatching { getCharacters(page = currentPage) }
+            _state.value = StartScreenState.Loading
+            runCatching { getCharacters(page = 1, name = name) }
                 .onSuccess { page ->
-                    canLoadMore = page.nextPage != null
+                    val canLoadMore = page.nextPage != null
                     _state.value = StartScreenState.Loaded(
                         items = page.items.map { it.copy(isFavorite = favoriteIds.contains(it.id)) },
                         canLoadMore = canLoadMore,
@@ -69,10 +79,7 @@ class StartScreenViewModel(
                     )
                 }
                 .onFailure {
-                    val cur = _state.value
-                    if (cur !is StartScreenState.Loaded) {
-                        _state.value = StartScreenState.Error("Load error")
-                    }
+                    _state.value = StartScreenState.Error("Load error")
                 }
         }
     }
@@ -83,16 +90,16 @@ class StartScreenViewModel(
         if (!cur.canLoadMore) return
         if (isLoadingMore) return
 
+        val name = _searchQuery.value.trim().ifBlank { null }
         isLoadingMore = true
         _state.value = cur.copy(isLoadingMore = true)
 
         viewModelScope.launch {
-            runCatching { getCharacters(page = currentPage + 1) }
+            runCatching { getCharacters(page = currentPage + 1, name = name) }
                 .onSuccess { page ->
                     currentPage += 1
-                    canLoadMore = page.nextPage != null
+                    val canLoadMore = page.nextPage != null
                     isLoadingMore = false
-
                     _state.value = cur.copy(
                         items = (cur.items + page.items).map { it.copy(isFavorite = favoriteIds.contains(it.id)) },
                         canLoadMore = canLoadMore,
@@ -110,8 +117,6 @@ class StartScreenViewModel(
     }
 
     fun toggleFavorite(character: Character) {
-        viewModelScope.launch {
-            favoriteList.toggle(character)
-        }
+        viewModelScope.launch { favoriteList.toggle(character) }
     }
 }
