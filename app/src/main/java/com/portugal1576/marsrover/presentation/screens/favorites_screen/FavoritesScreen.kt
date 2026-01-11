@@ -56,7 +56,7 @@ fun FavoritesScreen(
 }
 
 @Composable
-private fun FavoritesScreenContent(
+internal fun FavoritesScreenContent(
     state: FavoritesScreenState,
     navigate: (destinationScreen: Screens) -> Unit
 ) {

@@ -65,7 +65,7 @@ fun StartScreen(
 }
 
 @Composable
-private fun StartScreenContent(
+internal fun StartScreenContent(
     state: StartScreenState,
     navigate: (destinationScreen: Screens) -> Unit,
     onLoadNextPage: () -> Unit,
