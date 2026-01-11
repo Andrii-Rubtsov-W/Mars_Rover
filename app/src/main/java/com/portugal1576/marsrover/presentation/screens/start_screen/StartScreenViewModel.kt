@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.portugal1576.marsrover.domain.model.Character
 import com.portugal1576.marsrover.domain.model.FavoriteList
 import com.portugal1576.marsrover.domain.usecase.GetCharactersUseCase
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class)
 class StartScreenViewModel(
     private val getCharacters: GetCharactersUseCase,
     private val favoriteList: FavoriteList
