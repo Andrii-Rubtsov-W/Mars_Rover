@@ -7,7 +7,10 @@ sealed class StartScreenState {
     data class Loaded(
         val items: List<Character>,
         val canLoadMore: Boolean,
-        val isLoadingMore: Boolean
+        val isLoadingMore: Boolean,
+        val query: String,
+        val sort: SortConfig
     ) : StartScreenState()
+
     data class Error(val message: String) : StartScreenState()
 }

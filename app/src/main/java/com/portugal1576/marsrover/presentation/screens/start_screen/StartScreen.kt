@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +31,7 @@ import com.portugal1576.marsrover.R
 import com.portugal1576.marsrover.presentation.customElements.Background
 import com.portugal1576.marsrover.presentation.customElements.ContainerItem
 import com.portugal1576.marsrover.presentation.customElements.StartSearchHeader
+import com.portugal1576.marsrover.presentation.customElements.StartSortDialog
 import com.portugal1576.marsrover.presentation.customElements.bottomMenu.BottomMenu
 import com.portugal1576.marsrover.presentation.navigation.DetailsFrom
 import com.portugal1576.marsrover.presentation.navigation.Screens
@@ -36,9 +40,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StartScreenRoot(navController: NavController) {
-    StartScreen(
-        navigate = { destinationScreen -> navController.navigate(destinationScreen) }
-    )
+    StartScreen(navigate = { destinationScreen -> navController.navigate(destinationScreen) })
 }
 
 @Composable
@@ -47,7 +49,6 @@ fun StartScreen(
 ) {
     val viewModel: StartScreenViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
-    val query by viewModel.searchQuery.collectAsState()
 
     LaunchedEffect(viewModel) {
         viewModel.loadInitialIfNeeded()
@@ -55,99 +56,113 @@ fun StartScreen(
 
     StartScreenContent(
         state = state,
-        query = query,
-        onQueryChange = { viewModel.setSearchQuery(it) },
         navigate = navigate,
         onLoadNextPage = { viewModel.loadNextPage() },
-        onToggleFavorite = { viewModel.toggleFavorite(it) }
+        onToggleFavorite = { viewModel.toggleFavorite(it) },
+        onQueryChange = { viewModel.onQueryChange(it) },
+        onApplySort = { viewModel.setSortConfig(it) }
     )
 }
 
 @Composable
 private fun StartScreenContent(
     state: StartScreenState,
-    query: String,
-    onQueryChange: (String) -> Unit,
     navigate: (destinationScreen: Screens) -> Unit,
     onLoadNextPage: () -> Unit,
-    onToggleFavorite: (com.portugal1576.marsrover.domain.model.Character) -> Unit
+    onToggleFavorite: (com.portugal1576.marsrover.domain.model.Character) -> Unit,
+    onQueryChange: (String) -> Unit,
+    onApplySort: (SortConfig) -> Unit
 ) {
     val isPreview = LocalInspectionMode.current
+    var showSortDialog by remember { mutableStateOf(false) }
+
+    val currentQuery = (state as? StartScreenState.Loaded)?.query ?: ""
+    val currentSort = (state as? StartScreenState.Loaded)?.sort ?: SortConfig()
+
+    if (showSortDialog) {
+        StartSortDialog(
+            current = currentSort,
+            onApply = {
+                onApplySort(it)
+                showSortDialog = false
+            },
+            onDismiss = { showSortDialog = false }
+        )
+    }
 
     if (isPreview) {
-        Scaffold(
-            bottomBar = {
-                BottomMenu(
-                    current = Screens.StartScreen,
-                    onNavigate = navigate
-                )
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF101010))
-                    .padding(innerPadding)
-            ) {
-                StartSearchHeader(
-                    query = query,
-                    onQueryChange = onQueryChange,
-                    onFilterClick = {}
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF101010))
+        ) {
+            StartSearchHeader(
+                query = currentQuery,
+                onQueryChange = {},
+                onFilterClick = {},
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+            )
 
-                when (state) {
-                    is StartScreenState.Loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(56.dp))
-                        }
+            when (state) {
+                is StartScreenState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(56.dp))
                     }
+                }
 
-                    is StartScreenState.Loaded -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            val count = state.items.size.coerceAtLeast(6)
-                            items(count) { idx ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp)
-                                        .background(Color(0xFF1B1B1B))
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = state.items.getOrNull(idx)?.name ?: "Item ${idx + 1}",
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                is StartScreenState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = state.message, color = Color.Red)
+                    }
+                }
+
+                is StartScreenState.Loaded -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        val count = state.items.size.coerceAtLeast(6)
+                        items(count) { idx ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                                    .background(Color(0xFF1B1B1B))
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = state.items.getOrNull(idx)?.name ?: "Item ${idx + 1}",
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                        }
-                    }
-
-                    is StartScreenState.Error -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = state.message, color = Color.Red)
                         }
                     }
                 }
             }
-        }
-        return
-    }
 
-    Scaffold(
-        bottomBar = {
             BottomMenu(
                 current = Screens.StartScreen,
                 onNavigate = navigate
             )
         }
+        return
+    }
+
+    Scaffold(
+        bottomBar = { BottomMenu(current = Screens.StartScreen, onNavigate = navigate) }
     ) { innerPadding ->
         Background(res = R.drawable.font_vert, alpha = 1f) {
             Column(
@@ -156,15 +171,18 @@ private fun StartScreenContent(
                     .padding(innerPadding)
             ) {
                 StartSearchHeader(
-                    query = query,
+                    query = currentQuery,
                     onQueryChange = onQueryChange,
-                    onFilterClick = {}
+                    onFilterClick = { showSortDialog = true },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                 )
 
                 when (state) {
                     is StartScreenState.Loading -> {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
@@ -175,8 +193,23 @@ private fun StartScreenContent(
                         }
                     }
 
+                    is StartScreenState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = state.message, color = Color.Red)
+                        }
+                    }
+
                     is StartScreenState.Loaded -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                        ) {
                             items(state.items.size) { index ->
                                 if (state.canLoadMore && index == state.items.lastIndex && !state.isLoadingMore) {
                                     LaunchedEffect(state.items.size) { onLoadNextPage() }
@@ -206,15 +239,6 @@ private fun StartScreenContent(
                             }
                         }
                     }
-
-                    is StartScreenState.Error -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = state.message, color = Color.Red)
-                        }
-                    }
                 }
             }
         }
@@ -227,11 +251,11 @@ private fun StartScreenPreview_Loading() {
     MarsRoverTheme {
         StartScreenContent(
             state = StartScreenState.Loading,
-            query = "",
-            onQueryChange = {},
             navigate = {},
             onLoadNextPage = {},
-            onToggleFavorite = {}
+            onToggleFavorite = {},
+            onQueryChange = {},
+            onApplySort = {}
         )
     }
 }
@@ -244,13 +268,15 @@ private fun StartScreenPreview_Loaded() {
             state = StartScreenState.Loaded(
                 items = emptyList(),
                 canLoadMore = true,
-                isLoadingMore = false
+                isLoadingMore = false,
+                query = "Rick",
+                sort = SortConfig(SortKey.STATUS, true)
             ),
-            query = "Rick",
-            onQueryChange = {},
             navigate = {},
             onLoadNextPage = {},
-            onToggleFavorite = {}
+            onToggleFavorite = {},
+            onQueryChange = {},
+            onApplySort = {}
         )
     }
 }
@@ -261,11 +287,11 @@ private fun StartScreenPreview_Error() {
     MarsRoverTheme {
         StartScreenContent(
             state = StartScreenState.Error(message = "Something went wrong"),
-            query = "",
-            onQueryChange = {},
             navigate = {},
             onLoadNextPage = {},
-            onToggleFavorite = {}
+            onToggleFavorite = {},
+            onQueryChange = {},
+            onApplySort = {}
         )
     }
 }
