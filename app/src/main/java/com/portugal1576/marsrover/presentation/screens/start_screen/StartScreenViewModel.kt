@@ -140,10 +140,10 @@ class StartScreenViewModel(
 
     private fun applySort(items: List<Character>): List<Character> {
         val keySelector: (Character) -> String = when (sort.key) {
-            SortKey.NONE -> { c -> c.name.orEmpty() }
-            SortKey.STATUS -> { c -> c.status.orEmpty() }
-            SortKey.SPECIES -> { c -> c.species.orEmpty() }
-            SortKey.GENDER -> { c -> c.gender.orEmpty() }
+            SortKey.NONE -> { c -> c.name }
+            SortKey.STATUS -> { c -> c.status }
+            SortKey.SPECIES -> { c -> c.species }
+            SortKey.GENDER -> { c -> c.gender }
         }
 
         val normalized: (Character) -> String = { c -> keySelector(c).trim().lowercase() }
