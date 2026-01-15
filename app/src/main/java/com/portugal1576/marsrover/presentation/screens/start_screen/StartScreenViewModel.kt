@@ -29,6 +29,7 @@ class StartScreenViewModel(
     private var sort: SortConfig = SortConfig()
 
     private var searchJob: Job? = null
+    private var requestJob: Job? = null
     private var hasLoadedOnce = false
 
     init {
@@ -48,15 +49,19 @@ class StartScreenViewModel(
     fun loadInitialIfNeeded() {
         if (hasLoadedOnce && _state.value is StartScreenState.Loaded) return
         hasLoadedOnce = true
-        refreshCharacters()
+        refreshCharacters(showFullScreenLoading = true)
     }
 
     fun onQueryChange(newQuery: String) {
         query = newQuery
+        val cur = _state.value
+        if (cur is StartScreenState.Loaded) {
+            _state.value = cur.copy(query = query)
+        }
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(350)
-            refreshCharacters()
+            refreshCharacters(showFullScreenLoading = false)
         }
     }
 
@@ -71,18 +76,26 @@ class StartScreenViewModel(
         }
     }
 
-    fun refreshCharacters() {
+    fun refreshCharacters(showFullScreenLoading: Boolean) {
         currentPage = 1
         canLoadMore = true
         isLoadingMore = false
 
-        viewModelScope.launch {
-            _state.value = StartScreenState.Loading
-            runCatching { getCharacters(page = currentPage, name = query.ifBlank { null }) }
+        requestJob?.cancel()
+        requestJob = viewModelScope.launch {
+            val cur = _state.value
+
+            if (showFullScreenLoading || cur !is StartScreenState.Loaded) {
+                _state.value = StartScreenState.Loading
+            } else {
+                _state.value = cur.copy(isLoadingMore = true, query = query, sort = sort)
+            }
+
+            runCatching { getCharacters(page = 1, name = query.ifBlank { null }) }
                 .onSuccess { page ->
                     canLoadMore = page.nextPage != null
-                    val items = page.items
-                        .map { it.copy(isFavorite = favoriteIds.contains(it.id)) }
+                    val items = page.items.map { it.copy(isFavorite = favoriteIds.contains(it.id)) }
+
                     _state.value = StartScreenState.Loaded(
                         items = applySort(items),
                         canLoadMore = canLoadMore,
@@ -92,7 +105,11 @@ class StartScreenViewModel(
                     )
                 }
                 .onFailure {
-                    _state.value = StartScreenState.Error("Load error")
+                    if (cur is StartScreenState.Loaded) {
+                        _state.value = cur.copy(isLoadingMore = false, query = query, sort = sort)
+                    } else {
+                        _state.value = StartScreenState.Error("Load error")
+                    }
                 }
         }
     }
